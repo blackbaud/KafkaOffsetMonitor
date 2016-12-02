@@ -2,10 +2,11 @@ package com.quantifind.kafka.offsetapp
 
 import scala.slick.driver.SQLiteDriver.simple._
 import scala.slick.jdbc.meta.MTable
-
 import com.quantifind.kafka.OffsetGetter.OffsetInfo
 import com.quantifind.kafka.offsetapp.OffsetDB.{DbOffsetInfo, OffsetHistory, OffsetPoints}
 import com.twitter.util.Time
+
+import scala.slick.jdbc.JdbcBackend
 
 /**
  * Tools to store offsets in a DB
@@ -71,24 +72,24 @@ class OffsetDB(dbfile: String) {
   def emptyOld(since: Long) {
     database.withSession {
       implicit s =>
-        offsets.where(_.timestamp < since).delete
+        offsets.filter(_.timestamp < since).delete
     }
   }
 
   def offsetHistory(group: String, topic: String): OffsetHistory = database.withSession {
     implicit s =>
       val o = offsets
-        .where(off => off.group === group && off.topic === topic)
+        .filter(off => off.group === group && off.topic === topic)
         .sortBy(_.timestamp)
         .map(_.forHistory)
-        .list()
+        .list(implicitly[JdbcBackend#Session])
       OffsetHistory(group, topic, o)
   }
 
   def maybeCreate() {
     database.withSession {
       implicit s =>
-        if (MTable.getTables("OFFSETS").list().isEmpty) {
+        if (MTable.getTables("OFFSETS").list(implicitly[JdbcBackend#Session]).isEmpty) {
           offsets.ddl.create
         }
     }
