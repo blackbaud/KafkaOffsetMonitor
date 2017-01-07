@@ -1,6 +1,5 @@
 .arc/
 .DS_Store
-*.iml
 *.class
 *.pyc
 .*.swp
@@ -25,3 +24,7 @@ target
 .settings
 .gradle
 build
+out
+*.iml
+*.ipr
+*.iws

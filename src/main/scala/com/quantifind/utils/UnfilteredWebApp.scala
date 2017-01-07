@@ -1,5 +1,6 @@
 package com.quantifind.utils
 
+import com.quantifind.kafka.offsetapp.OWArgs
 import unfiltered.util.Port
 
 import com.quantifind.sumac.{ArgMain, FieldArgs}
@@ -22,6 +23,7 @@ trait UnfilteredWebApp[T <: Arguments] extends ArgMain[T] {
   def afterStop() {}
 
   override def main(parsed: T) {
+    OffsetMonitorCloudFoundryConfig.getInstance().initArgs(parsed.asInstanceOf[OWArgs])
     val root = getClass.getResource(htmlRoot)
     println("serving resources from: " + root)
     unfiltered.jetty.Http(parsed.port)
