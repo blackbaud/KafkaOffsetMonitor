@@ -1,5 +1,6 @@
 .arc/
 .DS_Store
+*.iml
 *.class
 *.pyc
 .*.swp

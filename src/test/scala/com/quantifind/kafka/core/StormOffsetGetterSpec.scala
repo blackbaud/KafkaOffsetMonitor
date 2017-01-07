@@ -1,7 +1,6 @@
 package com.quantifind.kafka.core
 
 import com.quantifind.utils.ZkUtilsWrapper
-import org.I0Itec.zkclient.ZkClient
 import org.apache.zookeeper.data.Stat
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -12,11 +11,10 @@ class StormOffsetGetterSpec extends FlatSpec with ShouldMatchers {
 
   trait Fixture {
 
-    val mockedZkClient = Mockito.mock(classOf[ZkClient])
     val zkOffsetBase = "/stormconsumers"
     val mockedZkUtil =  Mockito.mock(classOf[ZkUtilsWrapper])
 
-    val offsetGetter = new StormOffsetGetter(mockedZkClient, zkOffsetBase, mockedZkUtil)
+    val offsetGetter = new StormOffsetGetter(mockedZkUtil, zkOffsetBase)
   }
 
   "StormOffsetGetter" should "be able to extract topic from persisted spout state" in new Fixture {
@@ -37,7 +35,7 @@ class StormOffsetGetterSpec extends FlatSpec with ShouldMatchers {
                         }
                        }"""
     val ret = (spoutState, Mockito.mock(classOf[Stat]))
-    when(mockedZkUtil.readData(MockitoMatchers.eq(mockedZkClient), anyString)).thenReturn(ret)
+    when(mockedZkUtil.readData(anyString)).thenReturn(ret)
 
     val topics = offsetGetter.getTopicList(testGroup)
     

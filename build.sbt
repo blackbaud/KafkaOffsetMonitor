@@ -8,6 +8,8 @@ organization := "com.quantifind"
 
 scalacOptions ++= Seq("-deprecation", "-unchecked", "-optimize")
 
+mainClass in Compile := Some("com.quantifind.kafka.offsetapp.OffsetGetterWeb")
+
 libraryDependencies ++= Seq(
       "log4j" % "log4j" % "1.2.17",
       "net.databinder" %% "unfiltered-filter" % "0.8.4",
@@ -20,7 +22,7 @@ libraryDependencies ++= Seq(
       "org.reflections" % "reflections" % "0.9.10",
       "org.scalatest" %% "scalatest" % "2.2.4" % "test",
       "org.mockito" % "mockito-all" % "1.10.19" % "test",
-      "org.apache.kafka" %% "kafka" % "0.8.2.1")
+      "org.apache.kafka" %% "kafka" % "0.10.0.0")
 
 assemblyMergeStrategy in assembly := {
   case "about.html" => MergeStrategy.discard

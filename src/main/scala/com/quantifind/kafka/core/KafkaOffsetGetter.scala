@@ -10,22 +10,21 @@ import kafka.api.{OffsetRequest, PartitionOffsetRequestInfo}
 import kafka.common.{OffsetAndMetadata, TopicAndPartition}
 import kafka.consumer.{ConsumerConnector, KafkaStream}
 import kafka.message.MessageAndMetadata
-import kafka.utils.{Logging}
-import org.I0Itec.zkclient.ZkClient
+import kafka.utils.Logging
 
 import scala.collection._
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class KafkaOffsetGetter(theZkClient: ZkClient, zkUtils: ZkUtilsWrapper = new ZkUtilsWrapper) extends OffsetGetter {
+class KafkaOffsetGetter(theZkUtils: ZkUtilsWrapper) extends OffsetGetter {
   import KafkaOffsetGetter._
 
-  override val zkClient = theZkClient
+  override val zkUtils = theZkUtils
 
   override def processPartition(group: String, topic: String, pid: Int): Option[OffsetInfo] = {
     try {
-      zkUtils.getLeaderForPartition(zkClient, topic, pid) match {
+      zkUtils.getLeaderForPartition(topic, pid) match {
         case Some(bid) =>
           val consumerOpt = consumerMap.getOrElseUpdate(bid, getConsumer(bid))
           consumerOpt flatMap { consumer =>
@@ -42,8 +41,8 @@ class KafkaOffsetGetter(theZkClient: ZkClient, zkUtils: ZkUtilsWrapper = new ZkU
                   offset = offsetMetaData.offset,
                   logSize = logSize,
                   owner = Some("NA"),
-                  creation = Time.fromMilliseconds(offsetMetaData.timestamp),
-                  modified = Time.fromMilliseconds(offsetMetaData.timestamp))
+                  creation = Time.fromMilliseconds(offsetMetaData.commitTimestamp),
+                  modified = Time.fromMilliseconds(offsetMetaData.commitTimestamp))
               }
           }
         case None =>

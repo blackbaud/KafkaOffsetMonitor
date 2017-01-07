@@ -6,8 +6,7 @@ import com.quantifind.utils.ZkUtilsWrapper
 import com.twitter.util.Time
 import kafka.api.{OffsetRequest, PartitionOffsetRequestInfo}
 import kafka.common.TopicAndPartition
-import kafka.utils.{Json}
-import org.I0Itec.zkclient.ZkClient
+import kafka.utils.Json
 import org.I0Itec.zkclient.exception.ZkNoNodeException
 import org.apache.zookeeper.data.Stat
 
@@ -17,13 +16,13 @@ import scala.util.control.NonFatal
 /**
  * a version that manages offsets saved by Storm Kafka Spout
  */
-class StormOffsetGetter(theZkClient: ZkClient, zkOffsetBase: String, zkUtils: ZkUtilsWrapper = new ZkUtilsWrapper) extends OffsetGetter {
+class StormOffsetGetter(theZkUtils: ZkUtilsWrapper, zkOffsetBase: String) extends OffsetGetter {
 
-  override val zkClient = theZkClient
+  override val zkUtils = theZkUtils
 
   override def processPartition(group: String, topic: String, pid: Int): Option[OffsetInfo] = {
     try {
-      val (stateJson, stat: Stat) = zkUtils.readData(zkClient, s"$zkOffsetBase/$group/partition_$pid")
+      val (stateJson, stat: Stat) = zkUtils.readData(s"$zkOffsetBase/$group/partition_$pid")
 
       val offset: String = Json.parseFull(stateJson) match {
         case Some(m) =>
@@ -33,7 +32,7 @@ class StormOffsetGetter(theZkClient: ZkClient, zkOffsetBase: String, zkUtils: Zk
           "-1"
       }
 
-      zkUtils.getLeaderForPartition(zkClient, topic, pid) match {
+      zkUtils.getLeaderForPartition(topic, pid) match {
         case Some(bid) =>
           val consumerOpt = consumerMap.getOrElseUpdate(bid, getConsumer(bid))
           consumerOpt map {
@@ -65,7 +64,7 @@ class StormOffsetGetter(theZkClient: ZkClient, zkOffsetBase: String, zkUtils: Zk
 
   override def getGroups: Seq[String] = {
     try {
-      zkUtils.getChildren(zkClient, zkOffsetBase)
+      zkUtils.getChildren(zkOffsetBase)
     } catch {
       case NonFatal(t) =>
         error(s"could not get groups because of ${t.getMessage}", t)
@@ -79,7 +78,7 @@ class StormOffsetGetter(theZkClient: ZkClient, zkOffsetBase: String, zkUtils: Zk
   override def getTopicList(group: String): List[String] = {
     try {
       // assume there should be partition 0
-      val (stateJson, _) = zkUtils.readData(zkClient, s"$zkOffsetBase/$group/partition_0")
+      val (stateJson, _) = zkUtils.readData(s"$zkOffsetBase/$group/partition_0")
       println(stateJson)
       Json.parseFull(stateJson) match {
         case Some(m) =>
@@ -98,7 +97,7 @@ class StormOffsetGetter(theZkClient: ZkClient, zkOffsetBase: String, zkUtils: Zk
    */
   override def getTopicMap: Map[String, Seq[String]] = {
     try {
-      zkUtils.getChildren(zkClient, zkOffsetBase).flatMap {
+      zkUtils.getChildren(zkOffsetBase).flatMap {
         group => {
           getTopicList(group).map(topic => topic -> group)
         }

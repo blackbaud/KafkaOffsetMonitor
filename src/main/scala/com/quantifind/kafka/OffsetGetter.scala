@@ -6,11 +6,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.quantifind.kafka.OffsetGetter.{BrokerInfo, KafkaInfo, OffsetInfo}
 import com.quantifind.kafka.core.{KafkaOffsetGetter, StormOffsetGetter, ZKOffsetGetter}
 import com.quantifind.kafka.offsetapp.OffsetGetterArgs
+import com.quantifind.utils.ZkUtilsWrapper
 import com.twitter.util.Time
 import kafka.common.BrokerNotAvailableException
 import kafka.consumer.{Consumer, ConsumerConfig, ConsumerConnector, SimpleConsumer}
-import kafka.utils.{Json, Logging, ZKStringSerializer, ZkUtils}
-import org.I0Itec.zkclient.ZkClient
+import kafka.utils.{Json, Logging, ZkUtils}
+import org.I0Itec.zkclient.{ZkClient, ZkConnection}
 
 import scala.collection._
 import scala.util.control.NonFatal
@@ -25,10 +26,10 @@ case class TopicAndConsumersDetailsWrapper(consumers: TopicAndConsumersDetails)
 
 case class ConsumerDetail(name: String)
 
-trait OffsetGetter  extends Logging {
+trait OffsetGetter extends Logging {
 
   val consumerMap: mutable.Map[Int, Option[SimpleConsumer]] = mutable.Map()
-  def zkClient: ZkClient
+  def zkUtils: ZkUtilsWrapper
 
   //  kind of interface methods
   def getTopicList(group: String): List[String]
@@ -40,7 +41,7 @@ trait OffsetGetter  extends Logging {
   // get the Kafka simple consumer so that we can fetch broker offsets
   protected def getConsumer(bid: Int): Option[SimpleConsumer] = {
     try {
-      ZkUtils.readDataMaybeNull(zkClient, ZkUtils.BrokerIdsPath + "/" + bid) match {
+      zkUtils.readDataMaybeNull(ZkUtils.BrokerIdsPath + "/" + bid) match {
         case (Some(brokerInfoString), _) =>
           Json.parseFull(brokerInfoString) match {
             case Some(m) =>
@@ -62,7 +63,7 @@ trait OffsetGetter  extends Logging {
   }
 
   protected def processTopic(group: String, topic: String): Seq[OffsetInfo] = {
-    val pidMap = ZkUtils.getPartitionsForTopics(zkClient, Seq(topic))
+    val pidMap = zkUtils.getPartitionsForTopics(Seq(topic))
     for {
       partitions <- pidMap.get(topic).toSeq
       pid <- partitions.sorted
@@ -103,7 +104,7 @@ trait OffsetGetter  extends Logging {
   // get list of all topics
   def getTopics: Seq[String] = {
     try {
-      ZkUtils.getChildren(zkClient, ZkUtils.BrokerTopicsPath).sortWith(_ < _)
+      zkUtils.getChildren(ZkUtils.BrokerTopicsPath).sortWith(_ < _)
     } catch {
       case NonFatal(t) =>
         error(s"could not get topics because of ${t.getMessage}", t)
@@ -113,8 +114,8 @@ trait OffsetGetter  extends Logging {
   }
 
   def getClusterViz: Node = {
-    val clusterNodes = ZkUtils.getAllBrokersInCluster(zkClient).map((broker) => {
-      Node(broker.connectionString, Seq())
+    val clusterNodes = zkUtils.getAllBrokersInCluster().map((broker) => {
+      Node(broker.toString(), Seq())
     })
     Node("KafkaCluster", clusterNodes)
   }
@@ -206,13 +207,14 @@ object OffsetGetter {
 
   val kafkaOffsetListenerStarted: AtomicBoolean = new AtomicBoolean(false)
   var zkClient: ZkClient = null
+  var zkConnection: ZkConnection = null
   var consumerConnector: ConsumerConnector = null
 
-  def createZKClient(args: OffsetGetterArgs): ZkClient = {
-    new ZkClient(args.zk,
+  def createZkClientAndConnection(args: OffsetGetterArgs): (ZkClient, ZkConnection) = {
+    ZkUtils.createZkClientAndConnection(args.zk,
       args.zkSessionTimeout.toMillis.toInt,
-      args.zkConnectionTimeout.toMillis.toInt,
-      ZKStringSerializer)
+      args.zkConnectionTimeout.toMillis.toInt
+    )
   }
 
   def createKafkaConsumerConnector(args: OffsetGetterArgs): ConsumerConnector = {
@@ -232,20 +234,26 @@ object OffsetGetter {
   def getInstance(args: OffsetGetterArgs): OffsetGetter = {
 
     if (kafkaOffsetListenerStarted.compareAndSet(false, true)) {
-      zkClient = createZKClient(args)
+      val (client, connection) = createZkClientAndConnection(args)
+      zkClient = client
+      zkConnection = connection
       if (args.offsetStorage.toLowerCase == "kafka") {
         consumerConnector = createKafkaConsumerConnector(args)
         KafkaOffsetGetter.startOffsetListener(consumerConnector)
       }
     }
 
+    // TODO: secure should be configurable
+    val zkUtils = new ZkUtils(zkClient, zkConnection, false)
+    val zkUtilsWrapper = new ZkUtilsWrapper(zkUtils)
+
     args.offsetStorage.toLowerCase match {
       case "kafka" =>
-        new KafkaOffsetGetter(zkClient)
+        new KafkaOffsetGetter(zkUtilsWrapper)
       case "storm" =>
-        new StormOffsetGetter(zkClient, args.stormZKOffsetBase)
+        new StormOffsetGetter(zkUtilsWrapper, args.stormZKOffsetBase)
       case _ =>
-        new ZKOffsetGetter(zkClient)
+        new ZKOffsetGetter(zkUtilsWrapper)
     }
   }
 }

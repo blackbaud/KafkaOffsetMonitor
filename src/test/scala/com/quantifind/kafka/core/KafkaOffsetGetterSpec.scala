@@ -5,7 +5,6 @@ import com.quantifind.utils.ZkUtilsWrapper
 import kafka.api.{OffsetRequest, OffsetResponse, PartitionOffsetsResponse}
 import kafka.common.{OffsetAndMetadata, TopicAndPartition}
 import kafka.consumer.SimpleConsumer
-import org.I0Itec.zkclient.ZkClient
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.{Matchers => MockitoMatchers, Mockito}
@@ -15,12 +14,11 @@ class KafkaOffsetGetterSpec extends FlatSpec with ShouldMatchers {
 
   trait Fixture {
 
-    val mockedZkClient = Mockito.mock(classOf[ZkClient])
     val mockedZkUtil =  Mockito.mock(classOf[ZkUtilsWrapper])
     val mockedConsumer = Mockito.mock(classOf[SimpleConsumer])
     val testPartitionLeader = 1
 
-    val offsetGetter = new KafkaOffsetGetter(mockedZkClient, mockedZkUtil)
+    val offsetGetter = new KafkaOffsetGetter(mockedZkUtil)
     offsetGetter.consumerMap += (testPartitionLeader -> Some(mockedConsumer))
   }
 
@@ -35,7 +33,7 @@ class KafkaOffsetGetterSpec extends FlatSpec with ShouldMatchers {
     val offsetAndMetadata = OffsetAndMetadata(100, "meta", System.currentTimeMillis)
     KafkaOffsetGetter.offsetMap += (groupTopicPartition -> offsetAndMetadata)
 
-    when(mockedZkUtil.getLeaderForPartition(MockitoMatchers.eq(mockedZkClient), MockitoMatchers.eq(testTopic), MockitoMatchers.eq(testPartition)))
+    when(mockedZkUtil.getLeaderForPartition(MockitoMatchers.eq(testTopic), MockitoMatchers.eq(testPartition)))
       .thenReturn(Some(testPartitionLeader))
 
     val partitionErrorAndOffsets = Map(topicAndPartition -> PartitionOffsetsResponse(0,Seq(102)))
