@@ -13,7 +13,7 @@ plugins {
 
 apply plugin: "scala"
 apply plugin: "application"
-apply plugin: "com.bancvue.maven-publish-ext"
+apply plugin: "blackbaud-internal"
 
 dependencies {
     compile "org.scala-lang:scala-library:2.11.8"
@@ -27,6 +27,10 @@ dependencies {
     compile "com.twitter:util-core_2.11:6.39.0"
     compile "org.reflections:reflections:0.9.10"
     compile "org.apache.kafka:kafka_${scalaVersion}:0.10.0.0"
+    compile "net.liftweb:lift-json_${scalaVersion}:2.6.3"
+
+    compile "com.blackbaud:bluemoon-config-server-client:0.+"
+    compile "commons-logging:commons-logging:1.2"
 
     testCompile "org.scalatest:scalatest_${scalaVersion}:2.2.4"
     testCompile "org.mockito:mockito-all:1.10.19"
@@ -46,4 +50,8 @@ jar.finalizedBy shadowJar
 
 shadowJar {
     classifier = null
+    exclude 'META-INF/LICENSE'
+    metaInf {
+        from "src/deploy/cloudfoundry/app-descriptor.yml"
+    }
 }

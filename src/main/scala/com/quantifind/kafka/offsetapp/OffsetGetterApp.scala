@@ -17,7 +17,7 @@ import org.I0Itec.zkclient.ZkClient
 import scala.concurrent.duration._
 
 class OffsetGetterArgsWGT extends OffsetGetterArgs {
-  @Required
+
   var group: String = _
 
   var topics: Seq[String] = Seq()
@@ -38,8 +38,11 @@ class OffsetGetterArgs extends FieldArgs {
 
   var stormZKOffsetBase = "/stormconsumers"
 
-  @Required
   var zk: String = _
+
+  var zkSecured = true
+  var kafkaSslTruststoreLocation: String = null
+  var kafkaSslTruststorePassword: String = null
 
   var zkSessionTimeout: Duration = 30 seconds
   var zkConnectionTimeout: Duration = 30 seconds

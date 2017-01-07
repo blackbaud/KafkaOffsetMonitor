@@ -7,7 +7,7 @@ import com.quantifind.kafka.OffsetGetter
 import com.quantifind.kafka.OffsetGetter.KafkaInfo
 import com.quantifind.kafka.offsetapp.sqlite.SQLiteOffsetInfoReporter
 import com.quantifind.sumac.validation.Required
-import com.quantifind.utils.UnfilteredWebApp
+import com.quantifind.utils.{OffsetMonitorCloudFoundryConfig$, UnfilteredWebApp}
 import com.quantifind.utils.Utils.retry
 import com.twitter.util.Time
 import kafka.consumer.ConsumerConnector
@@ -26,10 +26,9 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
 class OWArgs extends OffsetGetterArgs with UnfilteredWebApp.Arguments {
-  @Required
+
   var retain: FiniteDuration = _
 
-  @Required
   var refresh: FiniteDuration = _
 
   var dbName: String = "offsetapp"
