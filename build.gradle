@@ -1,0 +1,49 @@
+buildscript {
+    ext {
+        scalaVersion = "2.11"
+    }
+    dependencies {
+        classpath "com.blackbaud:gradle-internal:3.+"
+    }
+}
+
+plugins {
+    id "com.github.johnrengelman.shadow" version "1.2.4"
+}
+
+apply plugin: "scala"
+apply plugin: "application"
+apply plugin: "com.bancvue.maven-publish-ext"
+
+dependencies {
+    compile "org.scala-lang:scala-library:2.11.8"
+    compile "log4j:log4j:1.2.17"
+    compile "net.databinder:unfiltered-filter_${scalaVersion}:0.8.4"
+    compile "net.databinder:unfiltered-jetty_${scalaVersion}:0.8.4"
+    compile "net.databinder:unfiltered-json4s_${scalaVersion}:0.8.4"
+    compile "com.quantifind:sumac_${scalaVersion}:0.3.0"
+    compile "com.typesafe.slick:slick_${scalaVersion}:2.1.0"
+    compile "org.xerial:sqlite-jdbc:3.7.2"
+    compile "com.twitter:util-core_2.11:6.39.0"
+    compile "org.reflections:reflections:0.9.10"
+    compile "org.apache.kafka:kafka_${scalaVersion}:0.10.0.0"
+
+    testCompile "org.scalatest:scalatest_${scalaVersion}:2.2.4"
+    testCompile "org.mockito:mockito-all:1.10.19"
+}
+
+mainClassName = "com.quantifind.kafka.offsetapp.OffsetGetterWeb"
+
+task spec(dependsOn: ['testClasses'], type: JavaExec) {
+    main = 'org.scalatest.tools.Runner'
+    args = ['-R', 'build/classes/test', '-o']
+    classpath = sourceSets.test.runtimeClasspath
+}
+
+check.dependsOn spec
+
+jar.finalizedBy shadowJar
+
+shadowJar {
+    classifier = null
+}

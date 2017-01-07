@@ -23,3 +23,5 @@ target
 /bin/
 .cache
 .settings
+.gradle
+build
