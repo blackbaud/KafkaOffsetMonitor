@@ -228,11 +228,17 @@ object OffsetGetter {
     props.put("auto.commit.enable", "false")
     props.put("auto.offset.reset", if (args.kafkaOffsetForceFromStart) "smallest" else "largest")
 
+    if (args.kafkaSslTruststoreLocation != null) {
+      props.put("kafka.sslTruststoreLocation", args.kafkaSslTruststoreLocation)
+    }
+    if (args.kafkaSslTruststorePassword != null) {
+      props.put("kafka.sslTruststorePassword", args.kafkaSslTruststorePassword)
+    }
+
     Consumer.create(new ConsumerConfig(props))
   }
 
   def getInstance(args: OffsetGetterArgs): OffsetGetter = {
-
     if (kafkaOffsetListenerStarted.compareAndSet(false, true)) {
       val (client, connection) = createZkClientAndConnection(args)
       zkClient = client
@@ -243,8 +249,7 @@ object OffsetGetter {
       }
     }
 
-    // TODO: secure should be configurable
-    val zkUtils = new ZkUtils(zkClient, zkConnection, false)
+    val zkUtils = new ZkUtils(zkClient, zkConnection, args.zkSecured)
     val zkUtilsWrapper = new ZkUtilsWrapper(zkUtils)
 
     args.offsetStorage.toLowerCase match {
