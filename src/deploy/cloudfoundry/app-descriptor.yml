@@ -1,7 +1,7 @@
 ---
 applications:
 - type: basic-service
-  memory: 1024
+  memory: 1024M
   services:
     - kafka
 
