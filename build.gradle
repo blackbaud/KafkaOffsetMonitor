@@ -4,6 +4,7 @@ buildscript {
     }
     dependencies {
         classpath "com.blackbaud:gradle-internal:3.+"
+        classpath "com.blackbaud:gradle-docker:1.+"
     }
 }
 
@@ -14,6 +15,7 @@ plugins {
 apply plugin: "scala"
 apply plugin: "application"
 apply plugin: "blackbaud-internal"
+apply plugin: "kafka"
 
 dependencies {
     compile "org.scala-lang:scala-library:2.11.8"
@@ -29,6 +31,9 @@ dependencies {
     compile "org.apache.kafka:kafka_${scalaVersion}:0.10.0.0"
     compile "net.liftweb:lift-json_${scalaVersion}:2.6.3"
 
+    compile ("com.blackbaud:common-kafka:1.+") {
+        transitive = false
+    }
     compile "com.blackbaud:bluemoon-config-server-client:0.+"
     compile "commons-logging:commons-logging:1.2"
 
@@ -46,6 +51,7 @@ task spec(dependsOn: ['testClasses'], type: JavaExec) {
 
 check.dependsOn spec
 
+jar.dependsOn updateJarWithProfileScript
 jar.finalizedBy shadowJar
 
 shadowJar {
