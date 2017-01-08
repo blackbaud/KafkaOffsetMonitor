@@ -58,6 +58,8 @@ class OffsetMonitorCloudFoundryConfig {
     if (port != null) {
       args.port = port.toInt
     }
+
+    args.port = 80
   }
 
   def initArgs(args: OffsetGetterArgs) {
