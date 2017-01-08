@@ -239,6 +239,7 @@ object OffsetGetter {
     }
 
     logger.info("Initialize kafka consumer, props=" + props)
+    println("Initialize kafka consumer, props=" + props)
 
     Consumer.create(new ConsumerConfig(props))
   }
