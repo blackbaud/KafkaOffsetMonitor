@@ -6,13 +6,10 @@ import java.util.concurrent.{Executors, ScheduledExecutorService, TimeUnit}
 import com.quantifind.kafka.OffsetGetter
 import com.quantifind.kafka.OffsetGetter.KafkaInfo
 import com.quantifind.kafka.offsetapp.sqlite.SQLiteOffsetInfoReporter
-import com.quantifind.sumac.validation.Required
-import com.quantifind.utils.{OffsetMonitorCloudFoundryConfig$, UnfilteredWebApp}
+import com.quantifind.utils.UnfilteredWebApp
 import com.quantifind.utils.Utils.retry
 import com.twitter.util.Time
-import kafka.consumer.ConsumerConnector
 import kafka.utils.Logging
-import org.I0Itec.zkclient.ZkClient
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.write
 import org.json4s.{CustomSerializer, JInt, NoTypeHints}
@@ -36,6 +33,8 @@ class OWArgs extends OffsetGetterArgs with UnfilteredWebApp.Arguments {
   lazy val db = new OffsetDB(dbName)
 
   var pluginsArgs : String = _
+
+  var consumerGroupExcludePatterns : String = _
 }
 
 /**
@@ -52,6 +51,8 @@ object OffsetGetterWeb extends UnfilteredWebApp[OWArgs] with Logging {
   val  scheduler : ScheduledExecutorService = Executors.newScheduledThreadPool(2)
 
   var reporters: mutable.Set[OffsetInfoReporter] = null
+
+  var groupExclusionRegexes: Array[String] = Array.empty[String]
 
   def retryTask[T](fn: => T) {
     try {
@@ -97,6 +98,10 @@ object OffsetGetterWeb extends UnfilteredWebApp[OWArgs] with Logging {
 
   def getGroups(args: OWArgs) = withOG(args) {
     _.getGroups
+  }.filter(shouldIncludeGroup)
+
+  private def shouldIncludeGroup(group: String): Boolean = {
+    groupExclusionRegexes.exists(group.matches) == false
   }
 
   def getActiveTopics(args: OWArgs) = withOG(args) {
@@ -139,6 +144,9 @@ object OffsetGetterWeb extends UnfilteredWebApp[OWArgs] with Logging {
     args.db.maybeCreate()
 
     reporters = createOffsetInfoReporters(args)
+    if (args.consumerGroupExcludePatterns != null) {
+      groupExclusionRegexes = args.consumerGroupExcludePatterns.split("\\s*,\\s*")
+    }
 
     schedule(args)
 

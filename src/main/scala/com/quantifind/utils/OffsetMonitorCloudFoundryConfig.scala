@@ -45,6 +45,11 @@ class OffsetMonitorCloudFoundryConfig extends Logging {
   def initArgs(args: OWArgs) {
     initArgs(args.asInstanceOf[OffsetGetterArgs])
 
+    val consumerGroupExcludePatterns = configProperties.getProperty("offsetmanager.consumerGroupExcludePatterns")
+    if (consumerGroupExcludePatterns != null) {
+      args.consumerGroupExcludePatterns = consumerGroupExcludePatterns
+    }
+
     val refreshRate = configProperties.getProperty("offsetmanager.refreshRate")
     if (refreshRate != null) {
       args.refresh = Duration(refreshRate).asInstanceOf[FiniteDuration]
