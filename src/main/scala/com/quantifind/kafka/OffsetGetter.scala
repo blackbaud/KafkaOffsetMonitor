@@ -214,6 +214,8 @@ object OffsetGetter {
   var consumerConnector: ConsumerConnector = null
 
   def createZkClientAndConnection(args: OffsetGetterArgs): (ZkClient, ZkConnection) = {
+    logger.info("Creating Zookeepr client, url=" + args.zk + ", sessionTimeout=" + args.zkSessionTimeout
+      + ", connectionTimeout=" + args.zkConnectionTimeout)
     ZkUtils.createZkClientAndConnection(args.zk,
       args.zkSessionTimeout.toMillis.toInt,
       args.zkConnectionTimeout.toMillis.toInt
