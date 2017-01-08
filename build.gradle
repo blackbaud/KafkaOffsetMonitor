@@ -31,7 +31,8 @@ dependencies {
     compile "org.apache.kafka:kafka_${scalaVersion}:0.10.0.0"
     compile "net.liftweb:lift-json_${scalaVersion}:2.6.3"
 
-    compile ("com.blackbaud:common-kafka:1.+") {
+    // used by the kafka plugin to bundle the security config script
+    compile("com.blackbaud:common-kafka:1.+") {
         transitive = false
     }
     compile "com.blackbaud:bluemoon-config-server-client:0.+"
@@ -51,13 +52,16 @@ task spec(dependsOn: ['testClasses'], type: JavaExec) {
 
 check.dependsOn spec
 
-jar.dependsOn updateJarWithProfileScript
 jar.finalizedBy shadowJar
+shadowJar.finalizedBy updateJarWithProfileScript
 
 shadowJar {
     classifier = null
-    exclude 'META-INF/LICENSE'
+    exclude "META-INF/LICENSE"
     metaInf {
         from "src/deploy/cloudfoundry/app-descriptor.yml"
+    }
+    dependencies {
+       exclude(dependency('com.blackbaud:common-kafka'))
     }
 }
