@@ -12,6 +12,7 @@ import kafka.common.BrokerNotAvailableException
 import kafka.consumer.{Consumer, ConsumerConfig, ConsumerConnector, SimpleConsumer}
 import kafka.utils.{Json, Logging, ZkUtils}
 import org.I0Itec.zkclient.{ZkClient, ZkConnection}
+import org.apache.log4j.Logger
 
 import scala.collection._
 import scala.util.control.NonFatal
@@ -205,12 +206,16 @@ object OffsetGetter {
     val lag = logSize - offset
   }
 
+  lazy val logger = Logger.getLogger(this.getClass.getName)
+
   val kafkaOffsetListenerStarted: AtomicBoolean = new AtomicBoolean(false)
   var zkClient: ZkClient = null
   var zkConnection: ZkConnection = null
   var consumerConnector: ConsumerConnector = null
 
   def createZkClientAndConnection(args: OffsetGetterArgs): (ZkClient, ZkConnection) = {
+    logger.info("Creating Zookeepr client, url=" + args.zk + ", sessionTimeout=" + args.zkSessionTimeout
+      + ", connectionTimeout=" + args.zkConnectionTimeout)
     ZkUtils.createZkClientAndConnection(args.zk,
       args.zkSessionTimeout.toMillis.toInt,
       args.zkConnectionTimeout.toMillis.toInt
@@ -234,6 +239,8 @@ object OffsetGetter {
     if (args.kafkaSslTruststorePassword != null) {
       props.put("kafka.sslTruststorePassword", args.kafkaSslTruststorePassword)
     }
+
+    logger.info("Initialize kafka consumer, props=" + props)
 
     Consumer.create(new ConsumerConfig(props))
   }

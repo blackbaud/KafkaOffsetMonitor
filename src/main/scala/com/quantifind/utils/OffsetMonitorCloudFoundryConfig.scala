@@ -5,6 +5,7 @@ import java.util.Properties
 
 import com.blackbaud.configserver.client.ConfigServerClient
 import com.quantifind.kafka.offsetapp.{OWArgs, OffsetGetterArgs}
+import kafka.utils.Logging
 import net.liftweb.json
 import net.liftweb.json.{JValue, DefaultFormats}
 import net.liftweb.json.JsonAST.{JString, JField, JObject}
@@ -12,7 +13,7 @@ import net.liftweb.json.JsonAST.{JString, JField, JObject}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 
-class OffsetMonitorCloudFoundryConfig {
+class OffsetMonitorCloudFoundryConfig extends Logging {
 
   private implicit val formats = DefaultFormats
   private val vcapServicesJson: JValue = getVcapServicesJson()
@@ -58,6 +59,8 @@ class OffsetMonitorCloudFoundryConfig {
     if (port != null) {
       args.port = port.toInt
     }
+
+    logger.info("Config, port=" + args.port + ", refresh=" + args.refresh + ", retaion=" + args.retain )
   }
 
   def initArgs(args: OffsetGetterArgs) {
@@ -85,6 +88,9 @@ class OffsetMonitorCloudFoundryConfig {
     if (zookeeperNodeIps != null) {
       args.zk = zookeeperNodeIps
     }
+
+    logger.info("Config, offsetStorage=" + args.offsetStorage + ", kafkaOffsetForceFromStart=" + args.kafkaOffsetForceFromStart
+      + ", zookeeperUri=" + args.zk + ", kafkaSslTruststoreLocation=" + args.kafkaSslTruststoreLocation)
   }
 
 }

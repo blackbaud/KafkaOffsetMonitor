@@ -98,7 +98,7 @@ object KafkaOffsetGetter extends Logging {
             val offsetMsg: MessageAndMetadata[Array[Byte], Array[Byte]] = it.next()
             val commitKey: GroupTopicPartition = readMessageKey(ByteBuffer.wrap(offsetMsg.key()))
             val commitValue: OffsetAndMetadata = readMessageValue(ByteBuffer.wrap(offsetMsg.message()))
-            info("Processed commit message: " + commitKey + " => " + commitValue)
+            debug("Processed commit message: " + commitKey + " => " + commitValue)
             offsetMap += (commitKey -> commitValue)
             topicAndGroups += TopicAndGroup(commitKey.topicPartition.topic, commitKey.group)
           } catch {
