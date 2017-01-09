@@ -236,11 +236,12 @@ object OffsetGetter {
     if (args.kafkaSslTruststoreLocation != null) {
       props.put("kafka.sslTruststoreLocation", args.kafkaSslTruststoreLocation)
     }
+
+    logger.info("Initialize kafka consumer, props=" + props)
+
     if (args.kafkaSslTruststorePassword != null) {
       props.put("kafka.sslTruststorePassword", args.kafkaSslTruststorePassword)
     }
-
-    logger.info("Initialize kafka consumer, props=" + props)
 
     Consumer.create(new ConsumerConfig(props))
   }
