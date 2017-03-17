@@ -1,6 +1,6 @@
 ---
 applications:
-- type: basic-service
+- type: test-support-service
   memory: 1024M
   disk_quota: 20GB
   services:
