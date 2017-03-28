@@ -1,6 +1,8 @@
 ---
 applications:
 - type: internal-support-service
+  instances: 1
+  blue_green_deploy: false
   memory: 1024M
   disk_quota: 20GB
   services:
